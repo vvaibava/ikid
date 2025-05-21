@@ -16,47 +16,50 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
         jokeCreator()
-        if jokeController != nil {
-            self.addChild(jokeController!)
-            self.view.insertSubview(<#T##view: UIView##UIView#>, belowSubview: <#T##UIView#>)
-            jokeController!.didMove(toParent: <#T##UIViewController?#>)
+
+        if let jokeVC = jokeController {
+            self.addChild(jokeVC)
+            self.view.insertSubview(jokeVC.view, at: 0)
+            jokeVC.didMove(toParent: self)
         }
-        
     }
+
     
-    func switchViewController(_ from: UIViewController?, to: UIViewController?) {
-        if let fromView = from {
-            fromView.willMove(toParent: nil)
-            fromView.view.removeFromSuperview()
-            fromView.removeFromParent()
-        }
-        
-        if let toView = to {
-            addChild(toView)
-            view.insertSubview(toView.view, at: 0)
-            toView.didMove(toParent: self)
-        }
+    func switchViewController(from fromVC: UIViewController, to toVC: UIViewController) {
+        fromVC.willMove(toParent: nil)
+        fromVC.view.removeFromSuperview()
+        fromVC.removeFromParent()
+
+        self.addChild(toVC)
+        self.view.addSubview(toVC.view)
+        toVC.didMove(toParent: self)
     }
 
-    @IBAction func switchViews(_ user: Any) {
-        jokeCreator()
+
+    @IBAction func switchViews(_ sender: Any) {
         punchCreator()
-        
-        let showJoke = jokeController?.view.superview != nil
-        let fromView = showJoke ? jokeController : punchlineController
-        let toView = showJoke ? punchlineController : jokeController
-        let transition: UIView.AnimationOptions = showJoke ? .transitionFlipFromRight : .transitionFlipFromLeft
+        jokeCreator()
 
-        UIView.transition(with: view, duration: 0.5, options: transition, animations: {
-            fromView?.view.removeFromSuperview()
-            if let toVC = toView {
-                toVC.view.frame = self.view.bounds
-                self.view.addSubview(toVC.view)
-            }
-        }, completion: nil)
+        if jokeController != nil && jokeController.view.superview != nil {
+            UIView.transition(from: jokeController.view,
+                              to: punchlineController.view,
+                              duration: 0.5,
+                              options: [.transitionFlipFromRight, .showHideTransitionViews],
+                              completion: nil)
+            punchlineController.view.frame = view.frame
+            switchViewController(from: jokeController, to: punchlineController)
+        } else {
+            UIView.transition(from: punchlineController.view,
+                              to: jokeController.view,
+                              duration: 0.5,
+                              options: [.transitionFlipFromRight, .showHideTransitionViews],
+                              completion: nil)
+            jokeController.view.frame = view.frame
+            switchViewController(from: punchlineController, to: jokeController)
+        }
     }
+
     
     func jokeCreator(){
         if jokeController == nil {
@@ -90,9 +93,11 @@ class ViewController: UIViewController {
     func updateJoke() {
         if jokeController != nil{
             jokeController.jokeLabel.text = jokes[curr]
+            jokeController.jokeLabel.numberOfLines = 2
         }
         if punchlineController != nil{
             punchlineController.punchlineLabel.text = punchline[curr]
+            punchlineController.punchlineLabel.numberOfLines = 2
         }
     }
     
